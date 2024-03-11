@@ -14,7 +14,9 @@ WORKDIR /workspace
 RUN chmod -R a+w /workspace
 RUN git clone https://github.com/jsaunders909/Wav2LipMask.git
 WORKDIR /workspace/Wav2LipMask
-RUN pip3 install -r requirements.txt
+RUN pip3 install librosa==0.7.0
+RUN pip3 install opencv-python
+RUN pip3 install tqdm numba
 
 RUN mkdir -p /root/.cache/torch/checkpoints && \
      curl -SL -o /root/.cache/torch/checkpoints/s3fd-619a316812.pth "https://www.adrianbulat.com/downloads/python-fan/s3fd-619a316812.pth"
