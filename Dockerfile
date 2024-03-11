@@ -13,7 +13,7 @@ RUN export DEBIAN_FRONTEND=noninteractive RUNLEVEL=1 ; \
 WORKDIR /workspace
 RUN chmod -R a+w /workspace
 RUN git clone https://github.com/jsaunders909/Wav2LipMask.git
-WORKDIR /workspace/Wav2Lip
+WORKDIR /workspace/Wav2LipMask
 RUN pip3 install -r requirements.txt
 
 RUN mkdir -p /root/.cache/torch/checkpoints && \
