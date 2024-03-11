@@ -12,7 +12,7 @@ RUN export DEBIAN_FRONTEND=noninteractive RUNLEVEL=1 ; \
 
 WORKDIR /workspace
 RUN chmod -R a+w /workspace
-RUN git clone https://github.com/Rudrabha/Wav2Lip
+RUN git clone https://github.com/jsaunders909/Wav2LipMask.git
 WORKDIR /workspace/Wav2Lip
 RUN pip3 install -r requirements.txt
 
