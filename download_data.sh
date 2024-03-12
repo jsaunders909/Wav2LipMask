@@ -9,5 +9,5 @@ wget --user $1 --password $2 https://thor.robots.ox.ac.uk/~vgg/data/lip_reading/
 wget --user $1 --password $2 https://thor.robots.ox.ac.uk/~vgg/data/lip_reading/data2/val.txt -O ../data/lrs2/val.txt
 wget --user $1 --password $2 https://thor.robots.ox.ac.uk/~vgg/data/lip_reading/data2/test.txt -O ../data/lrs2/test.txt
 
-cd ../data/lrs2 && cat lrs2_v1_parta* > lrs2_v1.tar && tar -xvf lrs2_v1.tar
+cd ../data/lrs2 && cat lrs2_v1_parta* > lrs2_v1.tar && tar -xv lrs2_v1.tar
 
