@@ -22,6 +22,8 @@ parser.add_argument("--data_root", help="Root folder of the preprocessed LRS2 da
 
 parser.add_argument('--checkpoint_dir', help='Save checkpoints to this directory', required=True, type=str)
 parser.add_argument('--checkpoint_path', help='Resumed from this checkpoint', default=None, type=str)
+parser.add_argument('--verbose', action='store_true')
+
 
 args = parser.parse_args()
 
@@ -35,8 +37,9 @@ syncnet_T = 5
 syncnet_mel_step_size = 16
 
 class Dataset(object):
-    def __init__(self, split):
+    def __init__(self, split, verbose=False):
         self.all_videos = get_image_list(args.data_root, split)
+        self.verbose = verbose
 
     def get_frame_id(self, frame):
         return int(basename(frame).split('.')[0])
@@ -60,7 +63,7 @@ class Dataset(object):
 
         end_idx = start_idx + syncnet_mel_step_size
 
-        return spec[start_idx : end_idx, :]
+        return spec[start_idx: end_idx, :]
 
 
     def __len__(self):
@@ -73,6 +76,8 @@ class Dataset(object):
 
             img_names = list(glob(join(vidname, '*.jpg')))
             if len(img_names) <= 3 * syncnet_T:
+                if self.verbose:
+                    print('Not enough frames')
                 continue
             img_name = random.choice(img_names)
             wrong_img_name = random.choice(img_names)
@@ -88,6 +93,8 @@ class Dataset(object):
 
             window_fnames = self.get_window(chosen)
             if window_fnames is None:
+                if self.verbose:
+                    print('Couldnt get window')
                 continue
 
             window = []
@@ -105,7 +112,10 @@ class Dataset(object):
 
                 window.append(img)
 
-            if not all_read: continue
+            if not all_read:
+                if self.verbose:
+                    print('Error loading images')
+                continue
 
             try:
                 wavpath = join(vidname, "audio.wav")
@@ -113,11 +123,16 @@ class Dataset(object):
 
                 orig_mel = audio.melspectrogram(wav).T
             except Exception as e:
+                if self.verbose:
+                    print('Error loading audio')
+                    print(e)
                 continue
 
             mel = self.crop_audio_window(orig_mel.copy(), img_name)
 
             if (mel.shape[0] != syncnet_mel_step_size):
+                if self.verbose:
+                    print('MEL Shape incorrect')
                 continue
 
             # H x W x 3 * T
