@@ -5,9 +5,12 @@ import numpy as np
 from scipy import signal
 from scipy.io import wavfile
 from hparams import hparams as hp
+import soundfile
 
 def load_wav(path, sr):
-    return librosa.core.load(path, sr=sr)[0]
+    #return librosa.core.load(path, sr=sr)[0]
+    # Update for librosa 0.10.0
+    soundfile.read(path, sr)
 
 def save_wav(wav, path, sr):
     wav *= 32767 / max(0.01, np.max(np.abs(wav)))
