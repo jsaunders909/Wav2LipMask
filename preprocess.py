@@ -37,7 +37,18 @@ template = 'ffmpeg -loglevel panic -y -i {} -strict -2 {}'
 
 def process_video_file(vfile, args, gpu_id):
 	video_stream = cv2.VideoCapture(vfile)
-	
+	length = int(video_stream.get(cv2.CAP_PROP_FRAME_COUNT))
+
+	vidname = os.path.basename(vfile).split('.')[0]
+	dirname = vfile.split('/')[-2]
+
+	fulldir = path.join(args.preprocessed_root, dirname, vidname)
+	os.makedirs(fulldir, exist_ok=True)
+
+	if len(os.listdir(fulldir)) >= length:
+		print(f'{fulldir} already processed')
+		return
+
 	frames = []
 	while 1:
 		still_reading, frame = video_stream.read()
@@ -46,11 +57,6 @@ def process_video_file(vfile, args, gpu_id):
 			break
 		frames.append(frame)
 	
-	vidname = os.path.basename(vfile).split('.')[0]
-	dirname = vfile.split('/')[-2]
-
-	fulldir = path.join(args.preprocessed_root, dirname, vidname)
-	os.makedirs(fulldir, exist_ok=True)
 
 	batches = [frames[i:i + args.batch_size] for i in range(0, len(frames), args.batch_size)]
 
