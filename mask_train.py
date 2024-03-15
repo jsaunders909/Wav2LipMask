@@ -29,6 +29,22 @@ parser.add_argument('--verbose', action='store_true')
 args = parser.parse_args()
 
 
+def display_image(x, x_masked):
+    # B, 3*T, W, H -> B, T, W, H, 3
+    B, t3, w, h = x.shape
+    T = t3//3
+
+    x = x.reshape(B, T, 3, w, h).permute((0, 1, 3, 4, 2)).detach().cpu().numpy() * 255
+    x_masked = x_masked.reshape(B, T, 3, w, h).permute((0, 1, 3, 4, 2)).detach().cpu().numpy() * 255
+
+    x, x_masked = x[0], x_masked[1]
+
+    vis_in = np.concatenate([x[0], x[1], x[2], x[3], x[4]], axis=0)
+    vis_out = np.concatenate([x_masked[0], x_masked[1], x_masked[2], x_masked[3], x_masked[4]], axis=0)
+    vis = np.concatenate([vis_in, vis_out], axis=1)
+
+    cv2.imwrite('vis.png', vis)
+
 global_step = 0
 global_epoch = 0
 use_cuda = torch.cuda.is_available()
@@ -161,10 +177,11 @@ def cosine_loss(a, v, y):
 
     return loss
 
+
 def certainty_loss(a, v):
-    d = nn.functional.cosine_similarity(a, v)
+    d = nn.functional.cosine_similarity(a, v).unsqueeze(1)
     y = 0.5 * torch.ones_like(d)
-    loss = logloss(d.unsqueeze(1), y)
+    loss = logloss(d, y)
     return loss
 
 def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
@@ -189,10 +206,14 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
 
             mel = mel.to(device)
 
-            a, v = syncnet(mel, x)
-            y = y.to(device)
+            B, t3, w, h = x.shape
+            inputs_ind = x.reshape(B, t3 // 3, 3, w, h).reshape(-1, 3, w, h)
+            mask = unet(inputs_ind).reshape(B, t3 // 3, 1, w, h).repeat(1, 1, 3, 1, 1).reshape(B, t3, w, h)
+            x_masked = x * mask
 
-            loss = cosine_loss(a, v, y)
+            a, v = syncnet(mel, x_masked)
+
+            loss = certainty_loss(a, v)
             reg_loss = mask.sum() / (96 * 96)
 
             loss = loss + reg_loss
@@ -211,6 +232,9 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
             #if global_step % hparams.syncnet_eval_interval == 0:
             #    with torch.no_grad():
             #        eval_model(test_data_loader, global_step, device, model, checkpoint_dir)
+
+            if global_step % hparams.syncnet_eval_interval == 0:
+                display_image(x, x_masked)
 
             prog_bar.set_description('Loss: {}'.format(running_loss / (step + 1)))
 
