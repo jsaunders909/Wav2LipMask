@@ -174,11 +174,10 @@ class Dataset(object):
 logloss = nn.BCELoss()
 def cosine_loss(a, v, y):
     d = nn.functional.cosine_similarity(a, v)
-
-    for i in range(d.shape[0]):
-        print(d[i].item(), y[i, 0].item())
     loss = logloss(d.unsqueeze(1), y)
+
     return loss
+
 
 
 def certainty_loss(a, v):
@@ -228,6 +227,7 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
 
                 a, v = syncnet(mel, x_masked)
                 loss = certainty_loss(a, v)
+                print(loss.item())
 
                 running_loss += loss.item()
 
