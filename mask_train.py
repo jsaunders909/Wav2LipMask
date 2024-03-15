@@ -196,7 +196,7 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
     global global_step, global_epoch
     resumed_step = global_step
 
-    TRAIN_MASK = 10
+    TRAIN_MASK = 1
 
     #syncnet.eval()
     unet.train()
