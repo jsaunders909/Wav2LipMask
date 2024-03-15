@@ -185,23 +185,40 @@ def certainty_loss(a, v):
     return loss
 
 def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
-          checkpoint_dir=None, checkpoint_interval=None, nepochs=None):
+          syncnet_optimizer, checkpoint_dir=None, checkpoint_interval=None, nepochs=None):
 
     global global_step, global_epoch
     resumed_step = global_step
 
     syncnet.eval()
+    unet.train()
 
     while global_epoch < nepochs:
-        running_loss = 0.
+        running_loss, running_loss_sync, running_loss_reg = 0, 0, 0
         prog_bar = tqdm(enumerate(train_data_loader))
         for step, (x, mel, y) in prog_bar:
-            unet.train()
-            optimizer.zero_grad()
 
             # Transform data to CUDA device
             x = x.to(device)
             mel = mel.to(device)
+
+            # --------------------- Train Syncnet to be confident
+            syncnet_optimizer.zero_grad()
+
+            with torch.no_grad():
+                B, t3, w, h = x.shape
+                inputs_ind = x.reshape(B, t3 // 3, 3, w, h).reshape(-1, 3, w, h)
+                mask = unet(inputs_ind).reshape(B, t3 // 3, 1, w, h).repeat(1, 1, 3, 1, 1).reshape(B, t3, w, h)
+                x_masked = x * mask
+
+            a, v = syncnet(mel, x_masked)
+            loss = cosine_loss(a, v, y)
+            loss.backward()
+            running_loss_sync += loss.item()
+
+            syncnet_optimizer.step()
+
+            optimizer.zero_grad()
 
             B, t3, w, h = x.shape
             inputs_ind = x.reshape(B, t3 // 3, 3, w, h).reshape(-1, 3, w, h)
@@ -209,10 +226,14 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
             x_masked = x * mask
 
             a, v = syncnet(mel, x_masked)
-
             loss = certainty_loss(a, v)
+
+            running_loss += loss.item()
+
             print(mask.mean().item(), mask.max().item(), mask.min().item())
             reg_loss = (1 - mask).mean()
+
+            running_loss_reg += reg_loss.item()
 
             loss = loss + reg_loss
 
@@ -221,7 +242,6 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
 
             global_step += 1
             cur_session_steps = global_step - resumed_step
-            running_loss += loss.item()
 
             #if global_step == 1 or global_step % checkpoint_interval == 0:
             #    save_checkpoint(
@@ -234,7 +254,7 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
             if global_step % 100 == 0:
                 display_image(x, x_masked)
 
-            prog_bar.set_description('Loss: {}'.format(running_loss / (step + 1)))
+            prog_bar.set_description(f'Loss: Uncertainty {running_loss / (step + 1):03E}, Sync {running_loss_sync / (step + 1):03E}), Reg {running_loss_reg / (step + 1)}')
 
         global_epoch += 1
 
@@ -323,12 +343,15 @@ if __name__ == "__main__":
     optimizer = optim.Adam([p for p in unet.parameters() if p.requires_grad],
                            lr=hparams.syncnet_lr)
 
+    syncnet_optimizer = optim.Adam([p for p in syncnet.parameters() if p.requires_grad],
+                           lr=hparams.syncnet_lr)
+
     checkpoint_path = './checkpoints/lipsync_expert.pth'
     if not os.path.exists(checkpoint_path):
         raise ValueError('A loaded checkpoint is required for training')
     load_checkpoint(checkpoint_path, syncnet, optimizer, reset_optimizer=False)
 
-    train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
+    train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer, syncnet_optimizer,
           checkpoint_dir=checkpoint_dir,
           checkpoint_interval=hparams.syncnet_checkpoint_interval,
           nepochs=hparams.nepochs)
