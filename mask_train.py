@@ -270,7 +270,7 @@ def eval_model(test_data_loader, global_step, device, model, checkpoint_dir):
 def save_checkpoint(model, optimizer, step, checkpoint_dir, epoch):
 
     checkpoint_path = join(
-        checkpoint_dir, "checkpoint_step{:09d}.pth".format(global_step))
+        checkpoint_dir, "checkpoint_step_mask{:09d}.pth".format(global_step))
     optimizer_state = optimizer.state_dict() if hparams.save_optimizer_state else None
     torch.save({
         "state_dict": model.state_dict(),
@@ -333,10 +333,10 @@ if __name__ == "__main__":
     optimizer = optim.Adam([p for p in unet.parameters() if p.requires_grad],
                            lr=hparams.syncnet_lr)
 
-    if checkpoint_path is not None:
-        load_checkpoint(checkpoint_path, syncnet, optimizer, reset_optimizer=False)
-    else:
+    checkpoint_path = './checkpoints/lipsync_expert.pth'
+    if not os.path.exists(checkpoint_path):
         raise ValueError('A loaded checkpoint is required for training')
+    load_checkpoint(checkpoint_path, syncnet, optimizer, reset_optimizer=False)
 
     train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
           checkpoint_dir=checkpoint_dir,
