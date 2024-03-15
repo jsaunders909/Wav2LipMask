@@ -29,6 +29,7 @@ parser.add_argument('--verbose', action='store_true')
 args = parser.parse_args()
 
 
+
 def display_image(x, x_masked):
     # B, 3*T, W, H -> B, T, W, H, 3
     B, t3, w, h = x.shape
@@ -190,6 +191,8 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
     global global_step, global_epoch
     resumed_step = global_step
 
+    TRAIN_MASK = 10
+
     syncnet.eval()
     unet.train()
 
@@ -218,22 +221,24 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
 
             syncnet_optimizer.step()
 
-            optimizer.zero_grad()
+            if global_step % TRAIN_MASK == 0:
 
-            a, v = syncnet(mel, x_masked)
-            loss = certainty_loss(a, v)
+                optimizer.zero_grad()
 
-            running_loss += loss.item()
+                a, v = syncnet(mel, x_masked)
+                loss = certainty_loss(a, v)
 
-            print(mask.mean().item(), mask.max().item(), mask.min().item())
-            reg_loss = (1 - mask).mean()
+                running_loss += loss.item()
 
-            running_loss_reg += reg_loss.item()
+                print(mask.mean().item(), mask.max().item(), mask.min().item())
+                reg_loss = (1 - mask).mean()
 
-            loss = loss + 0.1 * reg_loss
+                running_loss_reg += reg_loss.item()
 
-            loss.backward()
-            optimizer.step()
+                loss = loss + 0.1 * reg_loss
+
+                loss.backward()
+                optimizer.step()
 
             global_step += 1
             cur_session_steps = global_step - resumed_step
@@ -338,10 +343,10 @@ if __name__ == "__main__":
     print('total trainable params {}'.format(sum(p.numel() for p in unet.parameters() if p.requires_grad)))
 
     optimizer = optim.Adam([p for p in unet.parameters() if p.requires_grad],
-                           lr=hparams.syncnet_lr * 10)
+                           lr=hparams.syncnet_lr)
 
     syncnet_optimizer = optim.Adam([p for p in syncnet.parameters() if p.requires_grad],
-                           lr=hparams.syncnet_lr * 10)
+                           lr=hparams.syncnet_lr)
 
     checkpoint_path = './checkpoints/lipsync_expert.pth'
     if not os.path.exists(checkpoint_path):
