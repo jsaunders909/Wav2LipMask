@@ -46,7 +46,6 @@ def linearspectrogram(wav):
     return S
 
 def melspectrogram(wav):
-    print(f'Wav shape = {wav.shape}')
     D = _stft(preemphasis(wav, hp.preemphasis, hp.preemphasize))
     S = _amp_to_db(_linear_to_mel(np.abs(D))) - hp.ref_level_db
     

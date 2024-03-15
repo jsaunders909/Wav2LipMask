@@ -106,12 +106,13 @@ class Dataset(object):
             for fname in window_fnames:
                 img = cv2.imread(fname)
                 if img is None:
+                    print(f'Cant read image {fname}')
                     all_read = False
                     break
                 try:
                     img = cv2.resize(img, (hparams.img_size, hparams.img_size))
                 except Exception as e:
-                    raise e
+                    print(f'Cant resize image {fname}')
                     all_read = False
                     break
 
@@ -131,7 +132,6 @@ class Dataset(object):
                 if self.verbose:
                     print('Error loading audio')
                     print(f'Audio = {wavpath}')
-                    raise e
                     print(e)
                 continue
 
