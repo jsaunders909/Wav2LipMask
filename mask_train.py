@@ -203,16 +203,15 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
             mel = mel.to(device)
             y = y.to(device)
 
+            B, t3, w, h = x.shape
+            inputs_ind = x.reshape(B, t3 // 3, 3, w, h).reshape(-1, 3, w, h)
+            mask = unet(inputs_ind).reshape(B, t3 // 3, 1, w, h).repeat(1, 1, 3, 1, 1).reshape(B, t3, w, h)
+            x_masked = x * mask
+
             # --------------------- Train Syncnet to be confident
             syncnet_optimizer.zero_grad()
 
-            with torch.no_grad():
-                B, t3, w, h = x.shape
-                inputs_ind = x.reshape(B, t3 // 3, 3, w, h).reshape(-1, 3, w, h)
-                mask = unet(inputs_ind).reshape(B, t3 // 3, 1, w, h).repeat(1, 1, 3, 1, 1).reshape(B, t3, w, h)
-                x_masked = x * mask
-
-            a, v = syncnet(mel, x_masked)
+            a, v = syncnet(mel, x_masked.detach())
             loss = cosine_loss(a, v, y)
             loss.backward()
             running_loss_sync += loss.item()
@@ -220,11 +219,6 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
             syncnet_optimizer.step()
 
             optimizer.zero_grad()
-
-            B, t3, w, h = x.shape
-            inputs_ind = x.reshape(B, t3 // 3, 3, w, h).reshape(-1, 3, w, h)
-            mask = unet(inputs_ind).reshape(B, t3 // 3, 1, w, h).repeat(1, 1, 3, 1, 1).reshape(B, t3, w, h)
-            x_masked = x * mask
 
             a, v = syncnet(mel, x_masked)
             loss = certainty_loss(a, v)
