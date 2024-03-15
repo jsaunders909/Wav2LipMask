@@ -195,7 +195,7 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
 
     TRAIN_MASK = 10
 
-    syncnet.eval()
+    #syncnet.eval()
     unet.train()
 
     while global_epoch < nepochs:
