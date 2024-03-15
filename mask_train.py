@@ -174,8 +174,10 @@ class Dataset(object):
 logloss = nn.BCELoss()
 def cosine_loss(a, v, y):
     d = nn.functional.cosine_similarity(a, v)
-    loss = logloss(d.unsqueeze(1), y)
 
+    for i in range(d.shape[0]):
+        print(d[i].item(), y[i, 0].item())
+    loss = logloss(d.unsqueeze(1), y)
     return loss
 
 
