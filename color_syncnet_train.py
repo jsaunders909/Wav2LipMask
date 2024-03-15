@@ -98,7 +98,6 @@ class Dataset(object):
                 if self.verbose:
                     print('Couldnt get window')
                     print(chosen)
-                    exit()
                 continue
 
             window = []
@@ -143,7 +142,6 @@ class Dataset(object):
                 if self.verbose:
                     print('MEL Shape incorrect')
                     print(f'Should be {syncnet_mel_step_size} but is {mel.shape}')
-                    exit()
                 continue
 
             # H x W x 3 * T
