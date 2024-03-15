@@ -127,6 +127,8 @@ class Dataset(object):
                 wav = audio.load_wav(wavpath, hparams.sample_rate)
 
                 orig_mel = audio.melspectrogram(wav).T
+                print(f'Wav shape = {wav.shape}')
+                print(f'Orig mel shape = {orig_mel.shape}')
             except Exception as e:
                 if self.verbose:
                     print('Error loading audio')
