@@ -201,9 +201,6 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
 
             # Transform data to CUDA device
             x = x.to(device)
-            mask = unet(x)
-            x = x * mask.repeat(1, 3, 1, 1)
-
             mel = mel.to(device)
 
             B, t3, w, h = x.shape
