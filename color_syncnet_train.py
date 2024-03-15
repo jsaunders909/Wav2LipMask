@@ -78,8 +78,7 @@ class Dataset(object):
             if len(img_names) <= 3 * syncnet_T:
                 if self.verbose:
                     print('Not enough frames')
-                    print(f'Looking in vidname, images = {img_names}')
-                    exit()
+                    print(f'Looking in {vidname}, images = {img_names}')
                 continue
             img_name = random.choice(img_names)
             wrong_img_name = random.choice(img_names)
