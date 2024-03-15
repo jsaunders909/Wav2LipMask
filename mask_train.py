@@ -242,7 +242,7 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
 
                 loss.backward()
 
-                # optimizer.step()
+                optimizer.step()
 
             global_step += 1
             cur_session_steps = global_step - resumed_step
