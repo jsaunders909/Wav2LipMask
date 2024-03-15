@@ -50,27 +50,27 @@ class UNETMask(nn.Module):
 
             nn.Sequential(nn.Upsample(scale_factor=2, mode='bilinear'),
                           Conv2d(1024, 512, kernel_size=3, stride=1, padding=1),
-                          Conv2d(512, 512, kernel_size=3, stride=1, padding=1, residual=True),
+                          #Conv2d(512, 512, kernel_size=3, stride=1, padding=1, residual=True),
                           Conv2d(512, 512, kernel_size=3, stride=1, padding=1, residual=True), ),  # 6, 6
 
             nn.Sequential(nn.Upsample(scale_factor=2, mode='bilinear'),
                           Conv2d(768, 384, kernel_size=3, stride=1, padding=1),
-                          Conv2d(384, 384, kernel_size=3, stride=1, padding=1, residual=True),
+                          #Conv2d(384, 384, kernel_size=3, stride=1, padding=1, residual=True),
                           Conv2d(384, 384, kernel_size=3, stride=1, padding=1, residual=True), ),  # 12, 12
 
             nn.Sequential(nn.Upsample(scale_factor=2, mode='bilinear'),
                           Conv2d(512, 256, kernel_size=3, stride=1, padding=1),
-                          Conv2d(256, 256, kernel_size=3, stride=1, padding=1, residual=True),
+                          #Conv2d(256, 256, kernel_size=3, stride=1, padding=1, residual=True),
                           Conv2d(256, 256, kernel_size=3, stride=1, padding=1, residual=True), ),  # 24, 24
 
             nn.Sequential(nn.Upsample(scale_factor=2, mode='bilinear'),
                           Conv2d(320, 128, kernel_size=3, stride=1, padding=1),
-                          Conv2d(128, 128, kernel_size=3, stride=1, padding=1, residual=True),
+                          #Conv2d(128, 128, kernel_size=3, stride=1, padding=1, residual=True),
                           Conv2d(128, 128, kernel_size=3, stride=1, padding=1, residual=True), ),  # 48, 48
 
             nn.Sequential(nn.Upsample(scale_factor=(1, 2), mode='bilinear'),
                 Conv2d(160, 64, kernel_size=3, stride=1, padding=1),
-                          Conv2d(64, 64, kernel_size=3, stride=1, padding=1, residual=True),
+                          #Conv2d(64, 64, kernel_size=3, stride=1, padding=1, residual=True),
                           Conv2d(64, 64, kernel_size=3, stride=1, padding=1, residual=True), ), ])  # 96,96
 
         self.output_block = nn.Sequential(Conv2d(80, 32, kernel_size=3, stride=1, padding=1),
