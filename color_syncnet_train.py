@@ -78,6 +78,8 @@ class Dataset(object):
             if len(img_names) <= 3 * syncnet_T:
                 if self.verbose:
                     print('Not enough frames')
+                    print(f'Looking in {img_names}')
+                    exit()
                 continue
             img_name = random.choice(img_names)
             wrong_img_name = random.choice(img_names)
@@ -95,6 +97,8 @@ class Dataset(object):
             if window_fnames is None:
                 if self.verbose:
                     print('Couldnt get window')
+                    print(chosen)
+                    exit()
                 continue
 
             window = []
@@ -107,6 +111,7 @@ class Dataset(object):
                 try:
                     img = cv2.resize(img, (hparams.img_size, hparams.img_size))
                 except Exception as e:
+                    raise e
                     all_read = False
                     break
 
@@ -125,6 +130,8 @@ class Dataset(object):
             except Exception as e:
                 if self.verbose:
                     print('Error loading audio')
+                    print(f'Audio = {wavpath}')
+                    raise e
                     print(e)
                 continue
 
@@ -133,6 +140,8 @@ class Dataset(object):
             if (mel.shape[0] != syncnet_mel_step_size):
                 if self.verbose:
                     print('MEL Shape incorrect')
+                    print(f'Should be {syncnet_mel_step_size} but is {mel.shape}')
+                    exit()
                 continue
 
             # H x W x 3 * T
