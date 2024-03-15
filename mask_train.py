@@ -211,7 +211,7 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
             a, v = syncnet(mel, x_masked)
 
             loss = certainty_loss(a, v)
-            reg_loss = mask.sum() / (96 * 96)
+            reg_loss = (1 - mask).sum() / (96 * 96)
 
             loss = loss + reg_loss
 
@@ -230,7 +230,7 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
             #    with torch.no_grad():
             #        eval_model(test_data_loader, global_step, device, model, checkpoint_dir)
 
-            if global_step % hparams.syncnet_eval_interval == 0:
+            if global_step % 100 == 0:
                 display_image(x, x_masked)
 
             prog_bar.set_description('Loss: {}'.format(running_loss / (step + 1)))
