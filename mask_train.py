@@ -309,16 +309,27 @@ def _load(checkpoint_path):
         checkpoint = torch.load(checkpoint_path,
                                 map_location=lambda storage, loc: storage)
     return checkpoint
-
-def load_checkpoint(path, model, optimizer, reset_optimizer=False):
+def load_checkpoint(path, model, optimizer, reset_optimizer=False, overwrite_global_states=True):
     global global_step
     global global_epoch
 
     print("Load checkpoint from: {}".format(path))
     checkpoint = _load(path)
-    model.load_state_dict(checkpoint["state_dict"])
-    return model
+    s = checkpoint["state_dict"]
+    new_s = {}
+    for k, v in s.items():
+        new_s[k.replace('module.', '')] = v
+    model.load_state_dict(new_s)
+    if not reset_optimizer:
+        optimizer_state = checkpoint["optimizer"]
+        if optimizer_state is not None:
+            print("Load optimizer state from {}".format(path))
+            optimizer.load_state_dict(checkpoint["optimizer"])
+    if overwrite_global_states:
+        global_step = checkpoint["global_step"]
+        global_epoch = checkpoint["global_epoch"]
 
+    return model
 if __name__ == "__main__":
     checkpoint_dir = args.checkpoint_dir
     checkpoint_path = args.checkpoint_path
@@ -353,7 +364,8 @@ if __name__ == "__main__":
     checkpoint_path = './checkpoints/lipsync_expert2.pth'
     if not os.path.exists(checkpoint_path):
         raise ValueError('A loaded checkpoint is required for training')
-    load_checkpoint(checkpoint_path, syncnet, optimizer, reset_optimizer=False)
+    load_checkpoint(checkpoint_path, syncnet, None, reset_optimizer=True,
+                    overwrite_global_states=False)
 
     train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer, syncnet_optimizer,
           checkpoint_dir=checkpoint_dir,
