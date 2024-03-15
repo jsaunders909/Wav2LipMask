@@ -62,7 +62,6 @@ class Dataset(object):
         start_idx = int(80. * (start_frame_num / float(hparams.fps)))
 
         end_idx = start_idx + syncnet_mel_step_size
-        print(start_frame_num, start_idx, end_idx)
 
         return spec[start_idx: end_idx, :]
 
