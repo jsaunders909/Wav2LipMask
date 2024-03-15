@@ -221,9 +221,8 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
 
             syncnet_optimizer.step()
 
+            optimizer.zero_grad()
             if global_step % TRAIN_MASK == 0:
-
-                optimizer.zero_grad()
 
                 a, v = syncnet(mel, x_masked)
                 loss = certainty_loss(a, v)
@@ -238,6 +237,7 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
                 loss = loss + 0.01 * reg_loss
 
                 loss.backward()
+
                 optimizer.step()
 
             global_step += 1
