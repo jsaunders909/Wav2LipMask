@@ -211,8 +211,8 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
             a, v = syncnet(mel, x_masked)
 
             loss = certainty_loss(a, v)
-            print(mask.sum())
-            reg_loss = (1 - mask).sum() / (96 * 96)
+            print(mask.mean())
+            reg_loss = (1 - mask).mean()
 
             loss = loss + reg_loss
 
