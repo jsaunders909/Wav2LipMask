@@ -1,1 +1,1 @@
-python color_syncnet_train.py --data_root  ../data/lrs2_preprocessed/ --checkpoint_dir checkpoints --verbose
+python color_syncnet_train.py --data_root  ../data/lrs2_preprocessed/ --checkpoint_dir checkpoints
