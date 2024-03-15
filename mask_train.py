@@ -37,7 +37,7 @@ def display_image(x, x_masked):
     x = x.reshape(B, T, 3, w, h).permute((0, 1, 3, 4, 2)).detach().cpu().numpy() * 255
     x_masked = x_masked.reshape(B, T, 3, w, h).permute((0, 1, 3, 4, 2)).detach().cpu().numpy() * 255
 
-    x, x_masked = x[0], x_masked[1]
+    x, x_masked = x[0], x_masked[0]
 
     vis_in = np.concatenate([x[0], x[1], x[2], x[3], x[4]], axis=0)
     vis_out = np.concatenate([x_masked[0], x_masked[1], x_masked[2], x_masked[3], x_masked[4]], axis=0)
