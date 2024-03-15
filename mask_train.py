@@ -218,6 +218,9 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
             a, v = syncnet(mel, x.detach())
             loss = cosine_loss(a, v, y)
             loss.backward()
+
+            print(loss.item())
+
             running_loss_sync += loss.item()
 
             syncnet_optimizer.step()
@@ -227,7 +230,6 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
 
                 a, v = syncnet(mel, x_masked)
                 loss = certainty_loss(a, v)
-                print(loss.item())
 
                 running_loss += loss.item()
 
