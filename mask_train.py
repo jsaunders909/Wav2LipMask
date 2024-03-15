@@ -348,7 +348,7 @@ if __name__ == "__main__":
     syncnet_optimizer = optim.Adam([p for p in syncnet.parameters() if p.requires_grad],
                            lr=hparams.syncnet_lr)
 
-    checkpoint_path = './checkpoints/lipsync_expert.pth'
+    checkpoint_path = './checkpoints/lipsync_expert2.pth'
     if not os.path.exists(checkpoint_path):
         raise ValueError('A loaded checkpoint is required for training')
     load_checkpoint(checkpoint_path, syncnet, optimizer, reset_optimizer=False)
