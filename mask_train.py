@@ -230,7 +230,7 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
 
             running_loss_reg += reg_loss.item()
 
-            loss = loss + reg_loss
+            #loss = loss + reg_loss
 
             loss.backward()
             optimizer.step()
@@ -250,6 +250,8 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
                 display_image(x, x_masked)
 
             prog_bar.set_description(f'Loss: Uncertainty {running_loss / (step + 1):03E}, Sync {running_loss_sync / (step + 1):03E}), Reg {running_loss_reg / (step + 1)}')
+
+            torch.cuda.empty_cache()
 
         global_epoch += 1
 
