@@ -3,7 +3,12 @@ from torch import nn
 from torch.nn import functional as F
 import math
 
-from .conv import Conv2dTranspose, Conv2d, nonorm_Conv2d
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+
+from models.conv import Conv2dTranspose, Conv2d, nonorm_Conv2d
 
 
 class UNETMask(nn.Module):
@@ -100,3 +105,39 @@ class UNETMask(nn.Module):
             outputs = x
 
         return outputs
+
+if __name__ == '__main__':
+    import sys
+    import os
+
+    sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+    from models.syncnet import SyncNet_color
+
+    logloss = nn.BCELoss()
+    def cosine_loss(a, v, y):
+        d = nn.functional.cosine_similarity(a, v)
+        loss = logloss(d.unsqueeze(1), y)
+
+        return loss
+    def certainty_loss(a, v):
+        d = nn.functional.cosine_similarity(a, v)
+        y = 0.5 * torch.ones_like(d)
+        loss = logloss(d.unsqueeze(1), y)
+        return loss
+
+    syncnet = SyncNet_color()
+    unet = UNETMask()
+
+    inputs = torch.zeros((4, 15, 96, 96))
+    audios = torch.zeros((4, 1, 80, 16))
+
+    B, t3, w, h = inputs.shape
+    inputs_ind = inputs.reshape(B, t3//3, 3, w, h).reshape(-1, 3, w, h)
+    mask = unet(inputs_ind).reshape(B, t3//3, 1, w, h).repeat(1, 1, 3, 1, 1).reshape(B, t3, w, h)
+    inputs = inputs * mask
+
+    a, v = syncnet(audios, inputs)
+    breakpoint()
+    loss = certainty_loss(a, v)
+
+    print(a.shape, v.shape)

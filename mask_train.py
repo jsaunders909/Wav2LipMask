@@ -2,6 +2,7 @@ from os.path import dirname, join, basename, isfile
 from tqdm import tqdm
 
 from models import SyncNet_color as SyncNet
+from models.unet import UNETMask
 import audio
 
 import torch
@@ -160,30 +161,42 @@ def cosine_loss(a, v, y):
 
     return loss
 
-def train(device, model, train_data_loader, test_data_loader, optimizer,
+def certainty_loss(a, v):
+    d = nn.functional.cosine_similarity(a, v)
+    y = 0.5 * torch.ones_like(d)
+    loss = logloss(d.unsqueeze(1), y)
+    return loss
+
+def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
           checkpoint_dir=None, checkpoint_interval=None, nepochs=None):
 
     global global_step, global_epoch
     resumed_step = global_step
-    
+
+    syncnet.eval()
+
     while global_epoch < nepochs:
         running_loss = 0.
         prog_bar = tqdm(enumerate(train_data_loader))
         for step, (x, mel, y) in prog_bar:
-            model.train()
+            unet.train()
             optimizer.zero_grad()
 
             # Transform data to CUDA device
             x = x.to(device)
+            mask = unet(x)
+            x = x * mask.repeat(1, 3, 1, 1)
 
             mel = mel.to(device)
 
-            print(x.shape, mel.shape)
-
-            a, v = model(mel, x)
+            a, v = syncnet(mel, x)
             y = y.to(device)
 
             loss = cosine_loss(a, v, y)
+            reg_loss = mask.sum() / (96 * 96)
+
+            loss = loss + reg_loss
+
             loss.backward()
             optimizer.step()
 
@@ -191,13 +204,13 @@ def train(device, model, train_data_loader, test_data_loader, optimizer,
             cur_session_steps = global_step - resumed_step
             running_loss += loss.item()
 
-            if global_step == 1 or global_step % checkpoint_interval == 0:
-                save_checkpoint(
-                    model, optimizer, global_step, checkpoint_dir, global_epoch)
+            #if global_step == 1 or global_step % checkpoint_interval == 0:
+            #    save_checkpoint(
+            #        model, optimizer, global_step, checkpoint_dir, global_epoch)
 
-            if global_step % hparams.syncnet_eval_interval == 0:
-                with torch.no_grad():
-                    eval_model(test_data_loader, global_step, device, model, checkpoint_dir)
+            #if global_step % hparams.syncnet_eval_interval == 0:
+            #    with torch.no_grad():
+            #        eval_model(test_data_loader, global_step, device, model, checkpoint_dir)
 
             prog_bar.set_description('Loss: {}'.format(running_loss / (step + 1)))
 
@@ -289,16 +302,19 @@ if __name__ == "__main__":
     device = torch.device("cuda" if use_cuda else "cpu")
 
     # Model
-    model = SyncNet().to(device)
-    print('total trainable params {}'.format(sum(p.numel() for p in model.parameters() if p.requires_grad)))
+    syncnet = SyncNet().to(device)
+    unet = UNETMask().to(device)
+    print('total trainable params {}'.format(sum(p.numel() for p in unet.parameters() if p.requires_grad)))
 
-    optimizer = optim.Adam([p for p in model.parameters() if p.requires_grad],
+    optimizer = optim.Adam([p for p in unet.parameters() if p.requires_grad],
                            lr=hparams.syncnet_lr)
 
     if checkpoint_path is not None:
-        load_checkpoint(checkpoint_path, model, optimizer, reset_optimizer=False)
+        load_checkpoint(checkpoint_path, syncnet, optimizer, reset_optimizer=False)
+    else:
+        raise ValueError('A loaded checkpoint is required for training')
 
-    train(device, model, train_data_loader, test_data_loader, optimizer,
+    train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
           checkpoint_dir=checkpoint_dir,
           checkpoint_interval=hparams.syncnet_checkpoint_interval,
           nepochs=hparams.nepochs)
