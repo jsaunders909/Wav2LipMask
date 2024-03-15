@@ -238,9 +238,9 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
             global_step += 1
             cur_session_steps = global_step - resumed_step
 
-            #if global_step == 1 or global_step % checkpoint_interval == 0:
-            #    save_checkpoint(
-            #        model, optimizer, global_step, checkpoint_dir, global_epoch)
+            if global_step == 1 or global_step % 1000 == 0:
+                save_checkpoint(
+                    unet, optimizer, global_step, checkpoint_dir, global_epoch)
 
             #if global_step % hparams.syncnet_eval_interval == 0:
             #    with torch.no_grad():
