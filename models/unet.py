@@ -125,11 +125,16 @@ if __name__ == '__main__':
         loss = logloss(d.unsqueeze(1), y)
 
         return loss
+
+    def get_entropy(p):
+        a = p * torch.log2(p + 1e-6)
+        b = (1 - p) * torch.log2((1-p) + 1e-6)
+        return -(a + b)
+
     def certainty_loss(a, v):
         d = nn.functional.cosine_similarity(a, v).unsqueeze(1)
-        y = 0.5 * torch.ones_like(d)
-        loss = logloss(d, y)
-        return loss
+        entropy = get_entropy(d)
+        return (1 - entropy).mean()
 
     syncnet = SyncNet_color()
     unet = UNETMask()

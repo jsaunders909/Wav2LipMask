@@ -179,12 +179,16 @@ def cosine_loss(a, v, y):
     return loss
 
 
+def get_entropy(p):
+    a = p * torch.log2(p + 1e-6)
+    b = (1 - p) * torch.log2((1 - p) + 1e-6)
+    return -(a + b)
+
 
 def certainty_loss(a, v):
     d = nn.functional.cosine_similarity(a, v).unsqueeze(1)
-    y = 0.5 * torch.ones_like(d)
-    loss = logloss(d, y)
-    return loss
+    entropy = get_entropy(d)
+    return (1 - entropy).mean()
 
 def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
           syncnet_optimizer, checkpoint_dir=None, checkpoint_interval=None, nepochs=None):
