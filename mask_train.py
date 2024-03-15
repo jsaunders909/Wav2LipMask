@@ -338,10 +338,10 @@ if __name__ == "__main__":
     print('total trainable params {}'.format(sum(p.numel() for p in unet.parameters() if p.requires_grad)))
 
     optimizer = optim.Adam([p for p in unet.parameters() if p.requires_grad],
-                           lr=hparams.syncnet_lr)
+                           lr=hparams.syncnet_lr * 10)
 
     syncnet_optimizer = optim.Adam([p for p in syncnet.parameters() if p.requires_grad],
-                           lr=hparams.syncnet_lr)
+                           lr=hparams.syncnet_lr * 10)
 
     checkpoint_path = './checkpoints/lipsync_expert.pth'
     if not os.path.exists(checkpoint_path):
