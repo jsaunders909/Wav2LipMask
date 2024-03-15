@@ -201,6 +201,7 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
             # Transform data to CUDA device
             x = x.to(device)
             mel = mel.to(device)
+            y = y.to(device)
 
             # --------------------- Train Syncnet to be confident
             syncnet_optimizer.zero_grad()
