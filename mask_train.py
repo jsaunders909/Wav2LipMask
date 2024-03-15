@@ -215,7 +215,7 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
             # --------------------- Train Syncnet to be confident
             syncnet_optimizer.zero_grad()
 
-            a, v = syncnet(mel, x.detach())
+            a, v = syncnet(mel, x_masked.detach())
             loss = cosine_loss(a, v, y)
             loss.backward()
 
