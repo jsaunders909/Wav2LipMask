@@ -242,7 +242,7 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
 
                 running_loss_reg += reg_loss.item()
 
-                loss = loss + 0.01 * reg_loss
+                loss = loss + 0.2 * reg_loss
 
                 loss.backward()
 
@@ -259,7 +259,7 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
             #    with torch.no_grad():
             #        eval_model(test_data_loader, global_step, device, model, checkpoint_dir)
 
-            if global_step % 100 == 0:
+            if global_step % 10000 == 0:
                 display_image(x, x_masked)
 
             prog_bar.set_description(f'Loss: Uncertainty {running_loss / (step + 1):03E}, Sync {running_loss_sync / (step + 1):03E}), Reg {running_loss_reg / (step + 1)}')
