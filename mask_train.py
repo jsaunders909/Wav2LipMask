@@ -242,7 +242,7 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
 
                 running_loss_reg += reg_loss.item()
 
-                loss = loss + 0.2 * reg_loss
+                loss = loss + 0.08 * reg_loss
 
                 loss.backward()
 
