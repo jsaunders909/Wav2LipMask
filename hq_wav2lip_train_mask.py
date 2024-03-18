@@ -2,6 +2,7 @@ from os.path import dirname, join, basename, isfile
 from tqdm import tqdm
 
 from models import SyncNet_color as SyncNet
+from models.unet import UNETMask
 from models import Wav2Lip, Wav2Lip_disc_qual
 import audio
 
@@ -24,6 +25,7 @@ parser.add_argument("--data_root", help="Root folder of the preprocessed LRS2 da
 
 parser.add_argument('--checkpoint_dir', help='Save checkpoints to this directory', required=True, type=str)
 parser.add_argument('--syncnet_checkpoint_path', help='Load the pre-trained Expert discriminator', required=True, type=str)
+parser.add_argument('--mask_checkpoint_path', help='Load the pre-trained mask predictor', required=True, type=str)
 
 parser.add_argument('--checkpoint_path', help='Resume generator from this checkpoint', default=None, type=str)
 parser.add_argument('--disc_checkpoint_path', help='Resume quality disc from this checkpoint', default=None, type=str)
@@ -154,6 +156,7 @@ class Dataset(object):
 
             window = self.prepare_window(window)
             y = window.copy()
+            # window[:, :, window.shape[2]//2:] = apply_mask()
 
             wrong_window = self.prepare_window(wrong_window)
             x = np.concatenate([window, wrong_window], axis=0)
@@ -186,6 +189,7 @@ def cosine_loss(a, v, y):
 
 device = torch.device("cuda" if use_cuda else "cpu")
 syncnet = SyncNet().to(device)
+unet = UNETMask().to(device)
 
 for p in syncnet.parameters():
     p.requires_grad = False
@@ -201,6 +205,11 @@ def get_sync_loss(mel, g):
     a, v = syncnet(mel, g)
     y = torch.ones(g.size(0), 1).float().to(device)
     return cosine_loss(a, v, y)
+
+def apply_mask(x):
+    mask = unet(x)
+    return x * mask
+
 
 def train(device, model, disc, train_data_loader, test_data_loader, optimizer, disc_optimizer,
           checkpoint_dir=None, checkpoint_interval=None, nepochs=None):
@@ -221,7 +230,7 @@ def train(device, model, disc, train_data_loader, test_data_loader, optimizer, d
             indiv_mels = indiv_mels.to(device)
             gt = gt.to(device)
 
-            x[:, :, x.shape[2]//2:] = 0
+            x[:, :, x.shape[2]//2:] = apply_mask(x[:, :, x.shape[2]//2:])
 
             ### Train generator now. Remove ALL grads. 
             optimizer.zero_grad()
@@ -434,8 +443,8 @@ if __name__ == "__main__":
     if args.disc_checkpoint_path is not None:
         load_checkpoint(args.disc_checkpoint_path, disc, disc_optimizer, 
                                 reset_optimizer=False, overwrite_global_states=False)
-
-    load_checkpoint(args.syncnet_checkpoint_path, syncnet, None, reset_optimizer=True,
+        
+    load_checkpoint(args.syncnet_checkpoint_path, syncnet, None, reset_optimizer=True, 
                                 overwrite_global_states=False)
 
     if not os.path.exists(checkpoint_dir):
