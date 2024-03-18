@@ -6,7 +6,7 @@ import math
 from .conv import Conv2dTranspose, Conv2d, nonorm_Conv2d
 
 class Wav2Lip(nn.Module):
-    def __init__(self):
+    def __init__(self, use_upsample=False):
         super(Wav2Lip, self).__init__()
 
         self.face_encoder_blocks = nn.ModuleList([
@@ -56,29 +56,84 @@ class Wav2Lip(nn.Module):
 
         self.face_decoder_blocks = nn.ModuleList([
             nn.Sequential(Conv2d(512, 512, kernel_size=1, stride=1, padding=0),),
+            ]
+        )
 
-            nn.Sequential(Conv2dTranspose(1024, 512, kernel_size=3, stride=1, padding=0), # 3,3
-            Conv2d(512, 512, kernel_size=3, stride=1, padding=1, residual=True),),
+        if use_upsample:
+            self.face_decoder_blocks.append(
+                nn.Sequential(nn.Upsample(scale_factor=3, mode='bilinear'),
+                Conv2d(1024, 512, kernel_size=3, stride=1, padding=0),
+                Conv2d(512, 512, kernel_size=3, stride=1, padding=1, residual=True)
+                )
+            )
+        else:
+            self.face_decoder_blocks.append(
+            nn.Sequential(Conv2dTranspose(1024, 512, kernel_size=3, stride=1, padding=0),
+                          Conv2d(512, 512, kernel_size=3, stride=1, padding=1, residual=True),))
 
-            nn.Sequential(Conv2dTranspose(1024, 512, kernel_size=3, stride=2, padding=1, output_padding=1),
+        if use_upsample:
+            self.face_decoder_blocks.append(
+                nn.Sequential(nn.Upsample(scale_factor=2, mode='bilinear'),
+                    Conv2d(1024, 512, kernel_size=3, stride=2, padding=1, output_padding=1),
+                              #Conv2d(512, 512, kernel_size=3, stride=1, padding=1, residual=True),
+                              Conv2d(512, 512, kernel_size=3, stride=1, padding=1, residual=True), ))  # 6, 6
+
+        else:
+
+            self.face_decoder_blocks.append(nn.Sequential(Conv2dTranspose(1024, 512, kernel_size=3, stride=2, padding=1, output_padding=1),
             Conv2d(512, 512, kernel_size=3, stride=1, padding=1, residual=True),
-            Conv2d(512, 512, kernel_size=3, stride=1, padding=1, residual=True),), # 6, 6
+            Conv2d(512, 512, kernel_size=3, stride=1, padding=1, residual=True),)) # 6, 6
 
-            nn.Sequential(Conv2dTranspose(768, 384, kernel_size=3, stride=2, padding=1, output_padding=1),
+        if use_upsample:
+            self.face_decoder_blocks.append(
+                nn.Sequential(
+                    nn.Upsample(scale_factor=2, mode='bilinear'),
+                    Conv2d(768, 384, kernel_size=3, stride=2, padding=1, output_padding=1),
+                              #Conv2d(384, 384, kernel_size=3, stride=1, padding=1, residual=True),
+                              Conv2d(384, 384, kernel_size=3, stride=1, padding=1, residual=True), ))  # 12, 12
+
+        else:
+
+            self.face_decoder_blocks.append(nn.Sequential(Conv2dTranspose(768, 384, kernel_size=3, stride=2, padding=1, output_padding=1),
             Conv2d(384, 384, kernel_size=3, stride=1, padding=1, residual=True),
-            Conv2d(384, 384, kernel_size=3, stride=1, padding=1, residual=True),), # 12, 12
+            Conv2d(384, 384, kernel_size=3, stride=1, padding=1, residual=True),)) # 12, 12
 
+        if use_upsample:
+            self.face_decoder_blocks.append(nn.Sequential(
+                              nn.Upsample(scale_factor=2, mode='bilinear'),
+                              Conv2d(512, 256, kernel_size=3, stride=2, padding=1, output_padding=1),
+                              #Conv2d(256, 256, kernel_size=3, stride=1, padding=1, residual=True),
+                              Conv2d(256, 256, kernel_size=3, stride=1, padding=1, residual=True), ))
+
+        else:
+            self.face_decoder_blocks.append(
             nn.Sequential(Conv2dTranspose(512, 256, kernel_size=3, stride=2, padding=1, output_padding=1),
             Conv2d(256, 256, kernel_size=3, stride=1, padding=1, residual=True),
-            Conv2d(256, 256, kernel_size=3, stride=1, padding=1, residual=True),), # 24, 24
+            Conv2d(256, 256, kernel_size=3, stride=1, padding=1, residual=True),))
+            # 24, 24
 
+        if use_upsample:
+            self.face_decoder_blocks.append(
+                nn.Sequential(nn.Upsample(scale_factor=2, mode='bilinear'),
+                    Conv2d(320, 128, kernel_size=3, stride=2, padding=1, output_padding=1),
+                              #Conv2d(128, 128, kernel_size=3, stride=1, padding=1, residual=True),
+                              Conv2d(128, 128, kernel_size=3, stride=1, padding=1, residual=True), ))  # 48, 48
+        else:
+            self.face_decoder_blocks.append(
             nn.Sequential(Conv2dTranspose(320, 128, kernel_size=3, stride=2, padding=1, output_padding=1), 
             Conv2d(128, 128, kernel_size=3, stride=1, padding=1, residual=True),
-            Conv2d(128, 128, kernel_size=3, stride=1, padding=1, residual=True),), # 48, 48
+            Conv2d(128, 128, kernel_size=3, stride=1, padding=1, residual=True),)) # 48, 48
 
-            nn.Sequential(Conv2dTranspose(160, 64, kernel_size=3, stride=2, padding=1, output_padding=1),
+        if use_upsample:
+            self.face_decoder_blocks.append(
+                nn.Sequential(nn.Upsample(scale_factor=2, mode='bilinear'),
+                Conv2d(160, 64, kernel_size=3, stride=2, padding=1, output_padding=1),
+                              #Conv2d(64, 64, kernel_size=3, stride=1, padding=1, residual=True),
+                              Conv2d(64, 64, kernel_size=3, stride=1, padding=1, residual=True), ))  # 96,96
+        else:
+            self.face_decoder_blocks.append(nn.Sequential(Conv2dTranspose(160, 64, kernel_size=3, stride=2, padding=1, output_padding=1),
             Conv2d(64, 64, kernel_size=3, stride=1, padding=1, residual=True),
-            Conv2d(64, 64, kernel_size=3, stride=1, padding=1, residual=True),),]) # 96,96
+            Conv2d(64, 64, kernel_size=3, stride=1, padding=1, residual=True),)) # 96,96
 
         self.output_block = nn.Sequential(Conv2d(80, 32, kernel_size=3, stride=1, padding=1),
             nn.Conv2d(32, 3, kernel_size=1, stride=1, padding=0),
