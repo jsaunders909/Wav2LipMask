@@ -30,19 +30,21 @@ args = parser.parse_args()
 
 
 
-def display_image(x, x_masked):
+def display_image(x, x_masked, mask):
     # B, 3*T, W, H -> B, T, W, H, 3
     B, t3, w, h = x.shape
     T = t3//3
 
     x = x.reshape(B, T, 3, w, h).permute((0, 1, 3, 4, 2)).detach().cpu().numpy() * 255
     x_masked = x_masked.reshape(B, T, 3, w, h).permute((0, 1, 3, 4, 2)).detach().cpu().numpy() * 255
+    mask = x_masked.reshape(B, T, 3, w, h).permute((0, 1, 3, 4, 2)).detach().cpu().numpy() * 255
 
-    x, x_masked = x[0], x_masked[0]
+    x, x_masked, mask = x[0], x_masked[0], mask[0]
 
     vis_in = np.concatenate([x[0], x[1], x[2], x[3], x[4]], axis=0)
     vis_out = np.concatenate([x_masked[0], x_masked[1], x_masked[2], x_masked[3], x_masked[4]], axis=0)
-    vis = np.concatenate([vis_in, vis_out], axis=1)
+    vis_mask = np.concatenate([mask[0], mask[1], mask[2], mask[3], mask[4]], axis=0)
+    vis = np.concatenate([vis_in, vis_out, vis_mask], axis=1)
 
     cv2.imwrite('vis.png', vis)
 
@@ -235,7 +237,7 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
                 running_loss += loss.item()
 
                 print(mask.mean().item(), mask.max().item(), mask.min().item())
-                reg_loss = (1 - mask).mean()  # We want the mask to be zero except where it helps not to be
+                reg_loss = torch.sqrt((1 - mask)**2).mean()  # We want the mask to be zero except where it helps not to be
 
                 running_loss_reg += reg_loss.item()
 
