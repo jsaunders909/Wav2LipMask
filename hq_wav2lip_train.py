@@ -190,9 +190,6 @@ syncnet = SyncNet().to(device)
 for p in syncnet.parameters():
     p.requires_grad = False
 
-for p in unet.parameters():
-    p.requires_grad = False
-
 recon_loss = nn.L1Loss()
 def get_sync_loss(mel, g):
     g = g[:, :, :, g.size(3)//2:]
