@@ -214,7 +214,7 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
             B, t3, w, h = x.shape
             inputs_ind = x.reshape(B, t3 // 3, 3, w, h).reshape(-1, 3, w, h)
             mask = unet(inputs_ind).reshape(B, t3 // 3, 1, w, h).repeat(1, 1, 3, 1, 1).reshape(B, t3, w, h)
-            x_masked = x * mask
+            x_masked = (x * mask) + (torch.randn_like(x) * (1 - mask))
 
             # --------------------- Train Syncnet to be confident
             syncnet_optimizer.zero_grad()
@@ -222,9 +222,6 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
             a, v = syncnet(mel, x_masked.detach())
             loss = cosine_loss(a, v, y)
             loss.backward()
-
-            print(loss.item())
-
             running_loss_sync += loss.item()
 
             syncnet_optimizer.step()
@@ -238,7 +235,7 @@ def train(device, syncnet, unet, train_data_loader, test_data_loader, optimizer,
                 running_loss += loss.item()
 
                 print(mask.mean().item(), mask.max().item(), mask.min().item())
-                reg_loss = (1 - mask).mean()
+                reg_loss = (1 - mask).mean()  # We want the mask to be zero except where it helps not to be
 
                 running_loss_reg += reg_loss.item()
 
